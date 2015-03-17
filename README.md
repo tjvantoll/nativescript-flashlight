@@ -1,6 +1,6 @@
 # NativeScript Flashlight
 
-A flashlight module for use in NativeScript apps for Android and iOS.
+A flashlight NativeScript module for Android and iOS.
 
 ## Installation
 
