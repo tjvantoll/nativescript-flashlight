@@ -26,6 +26,15 @@ Run `npm install nativescript-flashlight --save` from your project's inner `app`
     └── ios
 ```
 
+### Android
+
+To use the camera on Android your app must request permission to use the camera. To do so, add the following two lines to your project's AndroidManifest.xml:
+
+```
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-feature android:name="android.hardware.camera" />
+```
+
 ## Usage
 
 To use the flashlight module you must first `require()` it from your project's `node_modules` directory:
