@@ -26,6 +26,8 @@ Run `npm install nativescript-flashlight --save` from your project's inner `app`
     └── ios
 ```
 
+> If you don't want to use npm as part of your NativeScript app, you can alternatively copy and paste this repo's flashlight-common.js, flashlight.android.js, and flashlight.ios.js files into your app.
+
 ### Android
 
 To use the camera on Android your app must request permission to use the camera. To do so, add the following two lines to your project's AndroidManifest.xml:
