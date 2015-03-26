@@ -26,7 +26,9 @@ Run `npm install nativescript-flashlight --save` from your project's inner `app`
     └── ios
 ```
 
-> If you don't want to use npm as part of your NativeScript app, you can alternatively copy and paste this repo's flashlight-common.js, flashlight.android.js, and flashlight.ios.js files into your app.
+As is, using npm within NativeScript is still experimental, so it's possible that you'll run into some issues. A more complete solution is in the works, and you can check out [this issue](https://github.com/NativeScript/nativescript-cli/issues/362) for an update on its progress and to offer feedback.
+
+If npm doesn't end up working for you, you can just copy and paste this repo's flashlight-common.js, flashlight.android.js, and flashlight.ios.js files into your app and reference them directly.
 
 ### Android
 
