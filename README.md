@@ -8,19 +8,20 @@ Run `npm install nativescript-flashlight --save` from your project's inner `app`
 
 ```
 .
-├── app
-│   ├── app <------------------------------ run npm install from here
-│   │   ├── app.css
-│   │   ├── app.js
-│   │   ├── bootstrap.js
-│   │   ├── main-page.js
-│   │   ├── main-page.xml
-│   │   ├── node_modules
-│   │   │   └── nativescript-flashlight <-- The install will place the module's code here
-│   │   │       └── ...
-│   │   └── package.json <----------------- The install will register “nativescript-flashlight” as a dependency here
-│   └── tns_modules
-│       └── ...
+├── app  <----------------run npm install from here
+│   ├── App_Resources
+│   │   ├── android
+│   │   └── ios
+│   ├── app.css
+│   ├── app.js
+│   ├── main-page.js
+│   ├── main-page.xml
+│   ├── node_modules
+│   │   └── nativescript-flashlight <-- The install will place the module's code here
+│   │       └── ...
+│   ├── package.json <-- The install will register “nativescript-flashlight” as a dependency here
+│   └── tns_modules
+│       └── ...
 └── platforms
     ├── android
     └── ios
