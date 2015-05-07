@@ -35,7 +35,7 @@ If npm doesn't end up working for you, you can just copy and paste this repo's f
 
 To use the camera on Android your app must request permission to use the camera. To do so, add the following two lines to your project's AndroidManifest.xml:
 
-```
+```xml
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-feature android:name="android.hardware.camera" />
 ```
@@ -44,13 +44,13 @@ To use the camera on Android your app must request permission to use the camera.
 
 To use the flashlight module you must first `require()` it from your project's `node_modules` directory:
 
-```
+```js
 var flashlight = require( "./node_modules/nativescript-flashlight/flashlight" );
 ```
 
 After you have a reference to the module you can then call its `on()`, `off()`, and `toggle()` methods. For example, the code below turns your device's flashlight on:
 
-```
+```js
 // my-page.js
 var flashlight = require( "/path/to/node_modules/nativescript-flashlight" );
 flashlight.on();
@@ -60,7 +60,7 @@ flashlight.on();
 
 The code below creates a button that toggles the device's flashlight:
 
-```
+```xml
 <!-- my-page.xml -->
 <Page loaded="pageLoaded">
     <StackLayout>
@@ -69,7 +69,7 @@ The code below creates a button that toggles the device's flashlight:
 </Page>
 ```
 
-```
+```js
 // my-page.js
 var flashlight = require( "./flashlight" );
 var observable = require( "data/observable" );
