@@ -25,15 +25,12 @@ function onStretchPropertyChanged(data) {
             break;
     }
 }
-function onSourcePropertyChanged(data) {
+function onImageSourcePropertyChanged(data) {
     var image = data.object;
-    image.ios.image = data.newValue ? data.newValue.ios : null;
-    if (isNaN(image.width) || isNaN(image.height)) {
-        image.requestLayout();
-    }
+    image._setNativeImage(data.newValue ? data.newValue.ios : null);
 }
-imageCommon.stretchProperty.metadata.onSetNativeValue = onStretchPropertyChanged;
-imageCommon.sourceProperty.metadata.onSetNativeValue = onSourcePropertyChanged;
+imageCommon.Image.imageSourceProperty.metadata.onSetNativeValue = onImageSourcePropertyChanged;
+imageCommon.Image.stretchProperty.metadata.onSetNativeValue = onStretchPropertyChanged;
 var Image = (function (_super) {
     __extends(Image, _super);
     function Image(options) {
@@ -50,6 +47,12 @@ var Image = (function (_super) {
         enumerable: true,
         configurable: true
     });
+    Image.prototype._setNativeImage = function (nativeImage) {
+        this.ios.image = nativeImage;
+        if (isNaN(this.width) || isNaN(this.height)) {
+            this.requestLayout();
+        }
+    };
     return Image;
 })(imageCommon.Image);
 exports.Image = Image;

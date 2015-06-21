@@ -2,7 +2,7 @@
   "name": "nativescript-flashlight",
   "version": "0.1.2",
   "description": "A flashlight NativeScript module for Android and iOS",
-  "main": "flashlight-common.js",
+  "main": "flashlight.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/tjvantoll/nativescript-flashlight.git"

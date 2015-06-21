@@ -5,20 +5,12 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var observable = require("data/observable");
-function isValidImage(url) {
-    return url.indexOf(".png") !== -1 || url.indexOf(".jpg") !== -1;
-}
-var knownEvents;
-(function (knownEvents) {
-    knownEvents.downloaded = "downloaded";
-})(knownEvents = exports.knownEvents || (exports.knownEvents = {}));
 var Cache = (function (_super) {
     __extends(Cache, _super);
     function Cache() {
         _super.apply(this, arguments);
         this.maxRequests = 5;
         this._enabled = true;
-        this._cache = {};
         this._pendingDownloads = {};
         this._queue = [];
         this._currentDownloads = 0;
@@ -87,52 +79,42 @@ var Cache = (function (_super) {
         }
     };
     Cache.prototype.get = function (key) {
-        var value = this._cache[key];
-        if (value) {
-            return value;
-        }
-        return undefined;
+        throw new Error("Abstract");
     };
-    Cache.prototype.set = function (key, source) {
-        this._cache[key] = source;
+    Cache.prototype.set = function (key, image) {
+        throw new Error("Abstract");
     };
     Cache.prototype.remove = function (key) {
-        delete this._cache[key];
+        throw new Error("Abstract");
     };
     Cache.prototype.clear = function () {
-        var keys = Object.keys(this._cache);
-        var i;
-        var length = keys.length;
-        for (i = 0; i < length; i++) {
-            delete this._cache[keys[i]];
-        }
+        throw new Error("Abstract");
     };
     Cache.prototype._downloadCore = function (request) {
+        throw new Error("Abstract");
     };
-    Cache.prototype._onDownloadCompleted = function (key, result) {
+    Cache.prototype._onDownloadCompleted = function (key, image) {
         var request = this._pendingDownloads[key];
-        this._cache[request.key] = result;
+        if (request.key && image) {
+            this.set(request.key, image);
+        }
         this._currentDownloads--;
         if (request.completed) {
-            request.completed(result, request.key);
+            request.completed(image, request.key);
         }
-        if (this.hasListeners(knownEvents.downloaded)) {
+        if (this.hasListeners(Cache.downloadedEvent)) {
             this.notify({
-                eventName: knownEvents.downloaded,
+                eventName: Cache.downloadedEvent,
                 object: this,
                 key: key,
-                image: result
+                image: image
             });
         }
         delete this._pendingDownloads[request.key];
         this._updateQueue();
     };
     Cache.prototype._shouldDownload = function (request, onTop) {
-        if (request.key in this._cache || request.key in this._pendingDownloads) {
-            return false;
-        }
-        if (!isValidImage(request.url)) {
-            this._cache[request.key] = this.invalid;
+        if (this.get(request.key) || request.key in this._pendingDownloads) {
             return false;
         }
         if (this._currentDownloads >= this.maxRequests || !this._enabled) {
@@ -158,6 +140,7 @@ var Cache = (function (_super) {
         var request = this._queue.pop();
         this._download(request);
     };
+    Cache.downloadedEvent = "downloaded";
     return Cache;
 })(observable.Observable);
 exports.Cache = Cache;

@@ -10,11 +10,13 @@ var observable = require("data/observable");
 var utils = require("utils/utils");
 var view = require("ui/core/view");
 var application = require("application");
+var enums = require("ui/enums");
 require("utils/module-merge").merge(frameCommon, exports);
 var TAG = "_fragmentTag";
 var OWNER = "_owner";
 var HIDDEN = "_hidden";
 var INTENT_EXTRA = "com.tns.activity";
+var ANDROID_FRAME = "android_frame";
 var navDepth = 0;
 var PageFragmentBody = (function (_super) {
     __extends(PageFragmentBody, _super);
@@ -31,6 +33,7 @@ var PageFragmentBody = (function (_super) {
     PageFragmentBody.prototype.onCreate = function (savedInstanceState) {
         _super.prototype.onCreate.call(this, savedInstanceState);
         trace.write(this.getTag() + ".onCreate(); savedInstanceState: " + savedInstanceState, trace.categories.NativeLifecycle);
+        _super.prototype.setHasOptionsMenu.call(this, true);
     };
     PageFragmentBody.prototype.onCreateView = function (inflater, container, savedInstanceState) {
         trace.write(this.getTag() + ".onCreateView(); container: " + container + "; savedInstanceState: " + savedInstanceState, trace.categories.NativeLifecycle);
@@ -101,6 +104,46 @@ var PageFragmentBody = (function (_super) {
         _super.prototype.onDetach.call(this);
         trace.write(this.getTag() + ".onDetach();", trace.categories.NativeLifecycle);
     };
+    PageFragmentBody.prototype.onCreateOptionsMenu = function (menu, inflater) {
+        _super.prototype.onCreateOptionsMenu.call(this, menu, inflater);
+        var page = this.entry.resolvedPage;
+        var items = page.optionsMenu.getItems();
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            var menuItem = menu.add(android.view.Menu.NONE, i, android.view.Menu.NONE, item.text);
+            if (item.icon) {
+                var androidApp = application.android;
+                var res = androidApp.context.getResources();
+                var id = res.getIdentifier(item.icon, 'drawable', androidApp.packageName);
+                if (id) {
+                    menuItem.setIcon(id);
+                }
+            }
+            var showAsAction = PageFragmentBody.getShowAsAction(item);
+            menuItem.setShowAsAction(showAsAction);
+        }
+    };
+    PageFragmentBody.getShowAsAction = function (menuItem) {
+        switch (menuItem.android.position) {
+            case enums.MenuItemPosition.actionBarIfRoom:
+                return android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM;
+            case enums.MenuItemPosition.popup:
+                return android.view.MenuItem.SHOW_AS_ACTION_NEVER;
+            case enums.MenuItemPosition.actionBar:
+            default:
+                return android.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
+        }
+    };
+    PageFragmentBody.prototype.onOptionsItemSelected = function (item) {
+        var page = this.entry.resolvedPage;
+        var itemId = item.getItemId();
+        var menuItem = page.optionsMenu.getItemAt(itemId);
+        if (menuItem) {
+            menuItem._raiseTap();
+            return true;
+        }
+        return _super.prototype.onOptionsItemSelected.call(this, item);
+    };
     return PageFragmentBody;
 })(android.app.Fragment);
 function onFragmentShown(fragment) {
@@ -109,7 +152,7 @@ function onFragmentShown(fragment) {
     var page = entry.resolvedPage;
     frame._currentEntry = entry;
     frame._addView(page);
-    page.onNavigatedTo(entry.entry.context);
+    page.onNavigatedTo();
     frame._processNavigationQueue(page);
 }
 function onFragmentHidden(fragment) {
@@ -254,35 +297,30 @@ var Frame = (function (_super) {
     return Frame;
 })(frameCommon.Frame);
 exports.Frame = Frame;
-var NativeActivity = (function (_super) {
-    __extends(NativeActivity, _super);
-    function NativeActivity() {
-        _super.apply(this, arguments);
-    }
-    Object.defineProperty(NativeActivity.prototype, "frame", {
-        get: function () {
-            if (this.androidFrame) {
-                return this.androidFrame.owner;
-            }
-            return null;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    NativeActivity.prototype.onCreate = function (savedInstanceState) {
+var NativeActivity = {
+    get frame() {
+        if (this.androidFrame) {
+            return this.androidFrame.owner;
+        }
+        return null;
+    },
+    get androidFrame() {
+        return this[ANDROID_FRAME];
+    },
+    onCreate: function (savedInstanceState) {
         trace.write("NativeScriptActivity.onCreate(); savedInstanceState: " + savedInstanceState, trace.categories.NativeLifecycle);
         var frameId = this.getIntent().getExtras().getInt(INTENT_EXTRA);
         for (var i = 0; i < framesCache.length; i++) {
             var aliveFrame = framesCache[i].get();
             if (aliveFrame && aliveFrame.frameId === frameId) {
-                this.androidFrame = aliveFrame;
+                this[ANDROID_FRAME] = aliveFrame;
                 break;
             }
         }
         if (!this.androidFrame) {
             throw new Error("Could not find AndroidFrame for Activity");
         }
-        _super.prototype.onCreate.call(this, savedInstanceState);
+        this.super.onCreate(savedInstanceState);
         this.androidFrame.setActivity(this);
         var root = new view.NativeViewGroup(this);
         root[OWNER] = this.frame;
@@ -291,73 +329,73 @@ var NativeActivity = (function (_super) {
         this.setContentView(this.androidFrame.rootViewGroup);
         var isRestart = !!savedInstanceState;
         this.frame._onActivityCreated(isRestart);
-    };
-    NativeActivity.prototype.onActivityResult = function (requestCode, resultCode, data) {
-        _super.prototype.onActivityResult.call(this, requestCode, resultCode, data);
+    },
+    onActivityResult: function (requestCode, resultCode, data) {
+        this.super.onActivityResult(requestCode, resultCode, data);
         trace.write("NativeScriptActivity.onActivityResult();", trace.categories.NativeLifecycle);
         var result = application.android.onActivityResult;
         if (result) {
             result(requestCode, resultCode, data);
         }
-    };
-    NativeActivity.prototype.onAttachFragment = function (fragment) {
+    },
+    onAttachFragment: function (fragment) {
         trace.write("NativeScriptActivity.onAttachFragment() : " + fragment.getTag(), trace.categories.NativeLifecycle);
-        _super.prototype.onAttachFragment.call(this, fragment);
+        this.super.onAttachFragment(fragment);
         if (!fragment.entry) {
             findPageForFragment(fragment, this.frame);
         }
-    };
-    NativeActivity.prototype.onStart = function () {
-        _super.prototype.onStart.call(this);
+    },
+    onStart: function () {
+        this.super.onStart();
         trace.write("NativeScriptActivity.onStart();", trace.categories.NativeLifecycle);
         this.frame.onLoaded();
-    };
-    NativeActivity.prototype.onStop = function () {
-        _super.prototype.onStop.call(this);
+    },
+    onStop: function () {
+        this.super.onStop();
         trace.write("NativeScriptActivity.onStop();", trace.categories.NativeLifecycle);
         this.frame.onUnloaded();
-    };
-    NativeActivity.prototype.onDestroy = function () {
+    },
+    onDestroy: function () {
         var frame = this.frame;
         frame._onDetached(true);
         for (var i = 0; i < frame.backStack.length; i++) {
             frame.backStack[i].resolvedPage._onDetached(true);
         }
         this.androidFrame.reset();
-        _super.prototype.onDestroy.call(this);
+        this.super.onDestroy();
         trace.write("NativeScriptActivity.onDestroy();", trace.categories.NativeLifecycle);
-    };
-    NativeActivity.prototype.onOptionsItemSelected = function (menuItem) {
-        if (!this.androidFrame.hasListeners(frameCommon.knownEvents.android.optionSelected)) {
+    },
+    onOptionsItemSelected: function (menuItem) {
+        if (!this.androidFrame.hasListeners(frameCommon.Frame.androidOptionSelectedEvent)) {
             return false;
         }
         var data = {
             handled: false,
-            eventName: frameCommon.knownEvents.android.optionSelected,
+            eventName: frameCommon.Frame.androidOptionSelectedEvent,
             item: menuItem,
             object: this.androidFrame
         };
         this.androidFrame.notify(data);
         return data.handled;
-    };
-    NativeActivity.prototype.onBackPressed = function () {
+    },
+    onBackPressed: function () {
         trace.write("NativeScriptActivity.onBackPressed;", trace.categories.NativeLifecycle);
         if (!frameCommon.goBack()) {
-            _super.prototype.onBackPressed.call(this);
+            this.super.onBackPressed();
         }
-    };
-    NativeActivity.prototype.onLowMemory = function () {
+    },
+    onLowMemory: function () {
         gc();
         java.lang.System.gc();
-        _super.prototype.onLowMemory.call(this);
-    };
-    NativeActivity.prototype.onTrimMemory = function (level) {
+        this.super.onLowMemory();
+        application.notify({ eventName: application.lowMemoryEvent, object: this, android: this });
+    },
+    onTrimMemory: function (level) {
         gc();
         java.lang.System.gc();
-        _super.prototype.onTrimMemory.call(this, level);
-    };
-    return NativeActivity;
-})(com.tns.NativeScriptActivity);
+        this.super.onTrimMemory(level);
+    }
+};
 var framesCounter = 0;
 var framesCache = new Array();
 var AndroidFrame = (function (_super) {
@@ -455,7 +493,7 @@ var AndroidFrame = (function (_super) {
         if (!this._activity) {
             return false;
         }
-        return this._activity.getIntent().Action !== android.content.Intent.ACTION_MAIN;
+        return this._activity.getIntent().getAction() !== android.content.Intent.ACTION_MAIN;
     };
     AndroidFrame.prototype.reset = function () {
         delete this.rootViewGroup[OWNER];
@@ -481,10 +519,11 @@ function findPageForFragment(fragment, frame) {
         trace.write("Current page matches fragment: " + fragmentTag, trace.categories.NativeLifecycle);
     }
     else {
-        for (var i = 0; i < frame.backStack.length; i++) {
-            entry = frame.backStack[i];
-            if (frame.backStack[i].resolvedPage[TAG] === fragmentTag) {
-                entry = frame.backStack[i];
+        var backStack = frame.backStack;
+        for (var i = 0; i < backStack.length; i++) {
+            entry = backStack[i];
+            if (backStack[i].resolvedPage[TAG] === fragmentTag) {
+                entry = backStack[i];
                 break;
             }
         }
@@ -503,6 +542,6 @@ function findPageForFragment(fragment, frame) {
 }
 function startActivity(activity, entry) {
     var intent = new android.content.Intent(activity, com.tns.NativeScriptActivity.class);
-    intent.Action = android.content.Intent.ACTION_DEFAULT;
+    intent.setAction(android.content.Intent.ACTION_DEFAULT);
     activity.startActivity(intent);
 }

@@ -11,6 +11,8 @@ var trace = require("trace");
 var builder = require("ui/builder");
 var fs = require("file-system");
 var utils = require("utils/utils");
+var platform = require("platform");
+var fileResolverModule = require("file-system/file-name-resolver");
 var frameStack = [];
 function buildEntryFromArgs(arg) {
     var entry;
@@ -44,16 +46,18 @@ function resolvePageFromEntry(entry) {
         var currentAppPath = fs.knownFolders.currentApp().path;
         var moduleNamePath = fs.path.join(currentAppPath, entry.moduleName);
         var moduleExports;
-        if (fs.File.exists(moduleNamePath + ".js")) {
-            trace.write("Loading JS file: " + moduleNamePath + ".js", trace.categories.Navigation);
-            moduleExports = require(moduleNamePath);
+        var moduleExportsResolvedPath = resolveFilePath(moduleNamePath, "js");
+        if (moduleExportsResolvedPath) {
+            trace.write("Loading JS file: " + moduleExportsResolvedPath, trace.categories.Navigation);
+            moduleExportsResolvedPath = moduleExportsResolvedPath.substr(0, moduleExportsResolvedPath.length - 3);
+            moduleExports = require(moduleExportsResolvedPath);
         }
         if (moduleExports && moduleExports.createPage) {
             trace.write("Calling createPage()", trace.categories.Navigation);
             page = moduleExports.createPage();
         }
         else {
-            page = pageFromBuilder(moduleNamePath, entry.moduleName, moduleExports);
+            page = pageFromBuilder(moduleNamePath, moduleExports);
         }
         if (!(page && page instanceof pages.Page)) {
             throw new Error("Failed to load Page from entry.moduleName: " + entry.moduleName);
@@ -61,28 +65,36 @@ function resolvePageFromEntry(entry) {
     }
     return page;
 }
-function pageFromBuilder(moduleNamePath, moduleName, moduleExports) {
+exports.resolvePageFromEntry = resolvePageFromEntry;
+var fileNameResolver;
+function resolveFilePath(path, ext) {
+    if (!fileNameResolver) {
+        fileNameResolver = new fileResolverModule.FileNameResolver({
+            width: platform.screen.mainScreen.widthDIPs,
+            height: platform.screen.mainScreen.heightDIPs,
+            os: platform.device.os,
+            deviceType: platform.device.deviceType
+        });
+    }
+    return fileNameResolver.resolveFileName(path, ext);
+}
+function pageFromBuilder(moduleNamePath, moduleExports) {
     var page;
     var element;
-    var fileName = moduleNamePath + ".xml";
-    if (fs.File.exists(fileName)) {
+    var fileName = resolveFilePath(moduleNamePath, "xml");
+    if (fileName) {
         trace.write("Loading XML file: " + fileName, trace.categories.Navigation);
         element = builder.load(fileName, moduleExports);
         if (element instanceof pages.Page) {
             page = element;
-            var cssFileName = moduleName + ".css";
-            page.addCssFile(cssFileName);
+            var cssFileName = resolveFilePath(moduleNamePath, "css");
+            if (cssFileName) {
+                page.addCssFile(cssFileName);
+            }
         }
     }
     return page;
 }
-var knownEvents;
-(function (knownEvents) {
-    var android;
-    (function (android) {
-        android.optionSelected = "optionSelected";
-    })(android = knownEvents.android || (knownEvents.android = {}));
-})(knownEvents = exports.knownEvents || (exports.knownEvents = {}));
 var Frame = (function (_super) {
     __extends(Frame, _super);
     function Frame() {
@@ -198,7 +210,7 @@ var Frame = (function (_super) {
     });
     Object.defineProperty(Frame.prototype, "backStack", {
         get: function () {
-            return this._backStack;
+            return this._backStack.slice();
         },
         enumerable: true,
         configurable: true
@@ -291,6 +303,7 @@ var Frame = (function (_super) {
     Frame.prototype._removeViewFromNativeVisualTree = function (child) {
         child._isAddedToNativeVisualTree = false;
     };
+    Frame.androidOptionSelectedEvent = "optionSelected";
     Frame.defaultAnimatedNavigation = true;
     return Frame;
 })(view.CustomLayoutView);

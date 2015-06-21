@@ -15,6 +15,16 @@ var device = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(device, "manufacturer", {
+        get: function () {
+            if (!device._manufacturer) {
+                device._manufacturer = android.os.Build.MANUFACTURER;
+            }
+            return device._manufacturer;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(device, "osVersion", {
         get: function () {
             if (!device._osVersion) {
@@ -61,6 +71,26 @@ var device = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(device, "uuid", {
+        get: function () {
+            if (!device._uuid) {
+                device._uuid = android.provider.Settings.Secure.getString(application.android.context.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            }
+            return device._uuid;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(device, "language", {
+        get: function () {
+            if (!device._language) {
+                device._language = java.util.Locale.getDefault().toString();
+            }
+            return device._language;
+        },
+        enumerable: true,
+        configurable: true
+    });
     device.MIN_TABLET_PIXELS = 600;
     return device;
 })();
@@ -76,7 +106,9 @@ var screen = (function () {
                 mainScreenInfo = {
                     widthPixels: metrics.widthPixels,
                     heightPixels: metrics.heightPixels,
-                    scale: metrics.density
+                    scale: metrics.density,
+                    widthDIPs: metrics.widthPixels / metrics.density,
+                    heightDIPs: metrics.heightPixels / metrics.density
                 };
             }
             return mainScreenInfo;

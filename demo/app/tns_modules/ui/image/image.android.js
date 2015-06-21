@@ -28,17 +28,15 @@ function onStretchPropertyChanged(data) {
             break;
     }
 }
-function onSourcePropertyChanged(data) {
+function onImageSourcePropertyChanged(data) {
     var image = data.object;
     if (!image.android) {
         return;
     }
-    if (image.android) {
-        image.android.setImageBitmap(data.newValue ? data.newValue.android : null);
-    }
+    image._setNativeImage(data.newValue ? data.newValue.android : null);
 }
-imageCommon.sourceProperty.metadata.onSetNativeValue = onSourcePropertyChanged;
-imageCommon.stretchProperty.metadata.onSetNativeValue = onStretchPropertyChanged;
+imageCommon.Image.imageSourceProperty.metadata.onSetNativeValue = onImageSourcePropertyChanged;
+imageCommon.Image.stretchProperty.metadata.onSetNativeValue = onStretchPropertyChanged;
 var Image = (function (_super) {
     __extends(Image, _super);
     function Image() {
@@ -53,6 +51,9 @@ var Image = (function (_super) {
     });
     Image.prototype._createUI = function () {
         this._android = new android.widget.ImageView(this._context);
+    };
+    Image.prototype._setNativeImage = function (nativeImage) {
+        this.android.setImageBitmap(nativeImage);
     };
     return Image;
 })(imageCommon.Image);

@@ -28,6 +28,8 @@ var initEvents = function () {
                 if (exports.onExit) {
                     exports.onExit();
                 }
+                exports.notify({ eventName: dts.exitEvent, object: androidApp, android: activity });
+                androidApp.startActivity = undefined;
             }
             if (androidApp.onActivityDestroyed) {
                 androidApp.onActivityDestroyed(activity);
@@ -39,6 +41,7 @@ var initEvents = function () {
                 if (exports.onSuspend) {
                     exports.onSuspend();
                 }
+                exports.notify({ eventName: dts.suspendEvent, object: androidApp, android: activity });
             }
             if (androidApp.onActivityPaused) {
                 androidApp.onActivityPaused(activity);
@@ -49,6 +52,7 @@ var initEvents = function () {
                 if (exports.onResume) {
                     exports.onResume();
                 }
+                exports.notify({ eventName: dts.resumeEvent, object: androidApp, android: activity });
             }
             if (androidApp.onActivityResumed) {
                 androidApp.onActivityResumed(activity);
@@ -74,7 +78,8 @@ var initEvents = function () {
     return lifecycleCallbacks;
 };
 app.init({
-    getActivity: function (intent) {
+    getActivity: function (activity) {
+        var intent = activity.getIntent();
         return exports.android.getActivity(intent);
     },
     onCreate: function () {
@@ -90,10 +95,11 @@ var AndroidApplication = (function () {
         this.context = nativeApp.getApplicationContext();
     }
     AndroidApplication.prototype.getActivity = function (intent) {
-        if (intent && intent.Action === android.content.Intent.ACTION_MAIN) {
+        if (intent && intent.getAction() === android.content.Intent.ACTION_MAIN) {
             if (exports.onLaunch) {
                 exports.onLaunch(intent);
             }
+            exports.notify({ eventName: dts.launchEvent, object: this, android: intent });
         }
         var topFrame = frame.topmost();
         if (!topFrame) {
@@ -124,6 +130,7 @@ global.__onUncaughtError = function (error) {
         nativeError: error.nativeException
     };
     exports.onUncaughtError(nsError);
+    exports.notify({ eventName: dts.uncaughtErrorEvent, object: appModule.android, android: nsError });
 };
 exports.start = function () {
     dts.loadCss();

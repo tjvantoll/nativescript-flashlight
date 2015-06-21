@@ -8,6 +8,14 @@ var viewCommon = require("ui/core/view-common");
 var trace = require("trace");
 var utils = require("utils/utils");
 require("utils/module-merge").merge(viewCommon, exports);
+function onIdPropertyChanged(data) {
+    var view = data.object;
+    if (!view._nativeView) {
+        return;
+    }
+    view._nativeView.accessibilityIdentifier = data.newValue;
+}
+viewCommon.View.idProperty.metadata.onSetNativeValue = onIdPropertyChanged;
 function onIsEnabledPropertyChanged(data) {
     var view = data.object;
     if (!view._nativeView) {
@@ -17,7 +25,7 @@ function onIsEnabledPropertyChanged(data) {
         view._nativeView.enabled = data.newValue;
     }
 }
-viewCommon.isEnabledProperty.metadata.onSetNativeValue = onIsEnabledPropertyChanged;
+viewCommon.View.isEnabledProperty.metadata.onSetNativeValue = onIsEnabledPropertyChanged;
 function onIsUserInteractionEnabledPropertyChanged(data) {
     var view = data.object;
     if (!view._nativeView) {
@@ -25,7 +33,7 @@ function onIsUserInteractionEnabledPropertyChanged(data) {
     }
     view._nativeView.userInteractionEnabled = data.newValue;
 }
-viewCommon.isUserInteractionEnabledProperty.metadata.onSetNativeValue = onIsUserInteractionEnabledPropertyChanged;
+viewCommon.View.isUserInteractionEnabledProperty.metadata.onSetNativeValue = onIsUserInteractionEnabledPropertyChanged;
 var PFLAG_FORCE_LAYOUT = 1;
 var PFLAG_MEASURED_DIMENSION_SET = 1 << 1;
 var PFLAG_LAYOUT_REQUIRED = 1 << 2;
@@ -118,9 +126,17 @@ var View = (function (_super) {
     };
     View.prototype.layoutNativeView = function (left, top, right, bottom) {
         var frame = CGRectMake(left, top, right - left, bottom - top);
-        if (!CGRectEqualToRect(this._nativeView.frame, frame)) {
-            trace.write(this + ", Native setFrame: " + NSStringFromCGRect(frame), trace.categories.Layout);
-            this._nativeView.frame = frame;
+        var nativeView;
+        if (!this.parent && this._nativeView.subviews.count > 0) {
+            trace.write(this + " has no parent. Setting frame to first child instead.", trace.categories.Layout);
+            nativeView = this._nativeView.subviews[0];
+        }
+        else {
+            nativeView = this._nativeView;
+        }
+        if (!CGRectEqualToRect(nativeView.frame, frame)) {
+            trace.write(this + ", Native setFrame: = " + NSStringFromCGRect(frame), trace.categories.Layout);
+            nativeView.frame = frame;
         }
     };
     View.prototype._updateLayout = function () {
@@ -158,6 +174,7 @@ var CustomLayoutView = (function (_super) {
         configurable: true
     });
     CustomLayoutView.prototype.onMeasure = function (widthMeasureSpec, heightMeasureSpec) {
+        // Don't call super because it will trigger measure again.
         var width = utils.layout.getMeasureSpecSize(widthMeasureSpec);
         var widthMode = utils.layout.getMeasureSpecMode(widthMeasureSpec);
         var height = utils.layout.getMeasureSpecSize(heightMeasureSpec);

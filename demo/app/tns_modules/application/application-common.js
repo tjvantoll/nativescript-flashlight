@@ -1,10 +1,19 @@
 require("globals");
 var definition = require("application");
-var cssParser = require("js-libs/reworkcss");
 var fs = require("file-system");
 var fileSystemAccess = require("file-system/file-system-access");
 var styleScope = require("ui/styling/style-scope");
-exports.cssFile = "app/app.css";
+var observable = require("data/observable");
+var events = new observable.Observable();
+require("utils/module-merge").merge(events, exports);
+exports.launchEvent = "launchEvent";
+exports.uncaughtErrorEvent = "uncaughtErrorEvent";
+exports.suspendEvent = "suspendEvent";
+exports.resumeEvent = "resumeEvent";
+exports.exitEvent = "exitEvent";
+exports.lowMemoryEvent = "lowMemoryEvent";
+exports.cssFile = "app.css";
+exports.resources = {};
 exports.onUncaughtError = undefined;
 exports.onLaunch = undefined;
 exports.onSuspend = undefined;
@@ -18,11 +27,8 @@ function loadCss() {
         var cssFileName = fs.path.join(fs.knownFolders.currentApp().path, definition.cssFile);
         var applicationCss;
         if (fs.File.exists(cssFileName)) {
-            new fileSystemAccess.FileSystemAccess().readText(cssFileName, function (r) {
-                applicationCss = r;
-            });
-            var applicationCssSyntaxTree = cssParser.parse(applicationCss, undefined);
-            definition.cssSelectorsCache = styleScope.StyleScope.createSelectorsFromSyntaxTree(applicationCssSyntaxTree);
+            new fileSystemAccess.FileSystemAccess().readText(cssFileName, function (r) { applicationCss = r; });
+            definition.cssSelectorsCache = styleScope.StyleScope.createSelectorsFromCss(applicationCss, cssFileName);
         }
     }
 }

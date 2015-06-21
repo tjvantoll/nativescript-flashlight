@@ -7,21 +7,27 @@ var __extends = this.__extends || function (d, b) {
 var viewCommon = require("ui/core/view-common");
 var trace = require("trace");
 var utils = require("utils/utils");
+var gestures = require("ui/gestures");
 require("utils/module-merge").merge(viewCommon, exports);
 var ANDROID = "_android";
 var NATIVE_VIEW = "_nativeView";
 var VIEW_GROUP = "_viewGroup";
 var OWNER = "_owner";
+function onIdPropertyChanged(data) {
+    var view = data.object;
+    view._nativeView.setTag(data.newValue);
+}
+viewCommon.View.idProperty.metadata.onSetNativeValue = onIdPropertyChanged;
 function onIsEnabledPropertyChanged(data) {
     var view = data.object;
     view._nativeView.setEnabled(data.newValue);
 }
-viewCommon.isEnabledProperty.metadata.onSetNativeValue = onIsEnabledPropertyChanged;
+viewCommon.View.isEnabledProperty.metadata.onSetNativeValue = onIsEnabledPropertyChanged;
 function onIsUserInteractionEnabledPropertyChanged(data) {
     var view = data.object;
     view._updateOnTouchListener(data.newValue);
 }
-viewCommon.isUserInteractionEnabledProperty.metadata.onSetNativeValue = onIsUserInteractionEnabledPropertyChanged;
+viewCommon.View.isUserInteractionEnabledProperty.metadata.onSetNativeValue = onIsUserInteractionEnabledPropertyChanged;
 exports.NativeViewGroup = android.view.ViewGroup.extend({
     get owner() {
         return this[OWNER];
@@ -65,6 +71,56 @@ var View = (function (_super) {
         enumerable: true,
         configurable: true
     });
+    View.prototype.observe = function (type, callback, thisArg) {
+        _super.prototype.observe.call(this, type, callback, thisArg);
+        if (this.isLoaded && !this.touchListenerIsSet) {
+            this.setOnTouchListener();
+        }
+    };
+    View.prototype.onLoaded = function () {
+        _super.prototype.onLoaded.call(this);
+        this.setOnTouchListener();
+    };
+    View.prototype.onUnloaded = function () {
+        _super.prototype.onUnloaded.call(this);
+        if (this._nativeView && this._nativeView.setOnTouchListener) {
+            this._nativeView.setOnTouchListener(null);
+            this.touchListenerIsSet = false;
+        }
+    };
+    View.prototype.hasGestureObservers = function () {
+        return this._gestureObservers ? this._gestureObservers.size > 0 : false;
+    };
+    View.prototype.setOnTouchListener = function () {
+        if (this._nativeView && this._nativeView.setOnTouchListener && this.hasGestureObservers()) {
+            this.touchListenerIsSet = true;
+            var that = new WeakRef(this);
+            if (this._nativeView.setClickable) {
+                this._nativeView.setClickable(true);
+            }
+            this._nativeView.setOnTouchListener(new android.view.View.OnTouchListener({
+                onTouch: function (view, motionEvent) {
+                    var owner = that.get();
+                    if (!owner) {
+                        return false;
+                    }
+                    var i;
+                    for (var gestType in gestures.GestureTypes) {
+                        if (gestures.GestureTypes.hasOwnProperty(gestType) && typeof gestures.GestureTypes[gestType] === "number") {
+                            var gestArray = owner.getGestureObservers(parseInt(gestures.GestureTypes[gestType]));
+                            if (gestArray) {
+                                for (i = 0; i < gestArray.length; i++) {
+                                    var gestObserver = gestArray[i];
+                                    gestObserver.androidOnTouchEvent(motionEvent);
+                                }
+                            }
+                        }
+                    }
+                    return owner._nativeView.onTouchEvent(motionEvent);
+                }
+            }));
+        }
+    };
     View.prototype._addViewCore = function (view) {
         if (this._context) {
             view._onAttached(this._context);
@@ -186,6 +242,23 @@ var View = (function (_super) {
         }
         return false;
     };
+    View.resolveSizeAndState = function (size, specSize, specMode, childMeasuredState) {
+        var result = size;
+        switch (specMode) {
+            case utils.layout.UNSPECIFIED:
+                result = size;
+                break;
+            case utils.layout.AT_MOST:
+                if (specSize < size) {
+                    result = specSize | utils.layout.MEASURED_STATE_TOO_SMALL;
+                }
+                break;
+            case utils.layout.EXACTLY:
+                result = specSize;
+                break;
+        }
+        return result | (childMeasuredState & utils.layout.MEASURED_STATE_MASK);
+    };
     return View;
 })(viewCommon.View);
 exports.View = View;
@@ -248,6 +321,7 @@ var CustomLayoutView = (function (_super) {
         }
     };
     CustomLayoutView.prototype.onMeasure = function (widthMeasureSpec, heightMeasureSpec) {
+        // Don't call super because it will trigger measure again.
         var width = utils.layout.getMeasureSpecSize(widthMeasureSpec);
         var widthMode = utils.layout.getMeasureSpecMode(widthMeasureSpec);
         var height = utils.layout.getMeasureSpecSize(heightMeasureSpec);

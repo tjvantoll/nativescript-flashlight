@@ -7,6 +7,13 @@ var platformNames;
 var device = (function () {
     function device() {
     }
+    Object.defineProperty(device, "manufacturer", {
+        get: function () {
+            return "Apple";
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(device, "os", {
         get: function () {
             return platformNames.ios;
@@ -59,6 +66,33 @@ var device = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(device, "uuid", {
+        get: function () {
+            var userDefaults = NSUserDefaults.standardUserDefaults();
+            var uuid_key = "TNSUUID";
+            var app_uuid = userDefaults.stringForKey(uuid_key);
+            if (!app_uuid) {
+                var uuidRef = CFUUIDCreate(kCFAllocatorDefault);
+                app_uuid = CFUUIDCreateString(kCFAllocatorDefault, uuidRef);
+                userDefaults.setObjectForKey(app_uuid, uuid_key);
+                userDefaults.synchronize();
+            }
+            return app_uuid;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(device, "language", {
+        get: function () {
+            if (!device._language) {
+                var languages = NSLocale.preferredLanguages();
+                device._language = languages[0];
+            }
+            return device._language;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return device;
 })();
 exports.device = device;
@@ -76,7 +110,9 @@ var screen = (function () {
                     mainScreenInfo = {
                         widthPixels: size.width * scale,
                         heightPixels: size.height * scale,
-                        scale: scale
+                        scale: scale,
+                        widthDIPs: size.width,
+                        heightDIPs: size.height
                     };
                 }
             }

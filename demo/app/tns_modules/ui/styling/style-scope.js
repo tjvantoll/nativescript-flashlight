@@ -4,6 +4,12 @@ var cssSelector = require("ui/styling/css-selector");
 var cssParser = require("js-libs/reworkcss");
 var VisualState = visualState.VisualState;
 var application = require("application");
+var utils = require("utils/utils");
+var types = require("utils/types");
+var fs = require("file-system");
+var file_access_module = require("file-system/file-system-access");
+var fileAccess = new file_access_module.FileSystemAccess();
+var pattern = /url\(('|")(.*?)\1\)/;
 var StyleScope = (function () {
     function StyleScope() {
         this._statesByKey = {};
@@ -15,38 +21,72 @@ var StyleScope = (function () {
         },
         set: function (value) {
             this._css = value;
+            this._cssFileName = undefined;
             this._cssSelectors = undefined;
             this._reset();
         },
         enumerable: true,
         configurable: true
     });
-    StyleScope.prototype.addCss = function (cssString) {
+    StyleScope.prototype.addCss = function (cssString, cssFileName) {
         if (this._css === undefined) {
             this._css = cssString;
         }
         else {
             this._css += cssString;
         }
+        this._cssFileName = cssFileName;
         this._reset();
         if (this._cssSelectors) {
-            var addedCssTree = cssParser.parse(cssString, undefined);
-            var addedSelectors = StyleScope.createSelectorsFromSyntaxTree(addedCssTree);
-            this._cssSelectors = this._joinCssSelectorsArrays([this._cssSelectors, addedSelectors]);
+            var addedSelectors = StyleScope.createSelectorsFromCss(cssString, cssFileName);
+            this._cssSelectors = StyleScope._joinCssSelectorsArrays([this._cssSelectors, addedSelectors]);
         }
+    };
+    StyleScope.createSelectorsFromCss = function (css, cssFileName) {
+        try {
+            var pageCssSyntaxTree = css ? cssParser.parse(css, { source: cssFileName }) : null;
+            var pageCssSelectors = new Array();
+            if (pageCssSyntaxTree) {
+                pageCssSelectors = StyleScope._joinCssSelectorsArrays([pageCssSelectors, StyleScope.createSelectorsFromImports(pageCssSyntaxTree)]);
+                pageCssSelectors = StyleScope._joinCssSelectorsArrays([pageCssSelectors, StyleScope.createSelectorsFromSyntaxTree(pageCssSyntaxTree)]);
+            }
+            return pageCssSelectors;
+        }
+        catch (e) {
+            trace.write("Css styling failed: " + e, trace.categories.Error, trace.messageType.error);
+        }
+    };
+    StyleScope.createSelectorsFromImports = function (tree) {
+        var selectors = new Array();
+        if (!types.isNullOrUndefined(tree)) {
+            var imports = tree["stylesheet"]["rules"].filter(function (r) { return r.type === "import"; });
+            for (var i = 0; i < imports.length; i++) {
+                var importItem = imports[i]["import"];
+                var match = importItem && importItem.match(pattern);
+                var url = match && match[2];
+                if (!types.isNullOrUndefined(url)) {
+                    if (utils.isFileOrResourcePath(url)) {
+                        var fileName = types.isString(url) ? url.trim() : "";
+                        if (fileName.indexOf("~/") === 0) {
+                            fileName = fs.path.join(fs.knownFolders.currentApp().path, fileName.replace("~/", ""));
+                        }
+                        fileAccess.readText(fileName, function (result) {
+                            selectors = StyleScope._joinCssSelectorsArrays([selectors, StyleScope.createSelectorsFromCss(result, fileName)]);
+                        });
+                    }
+                }
+            }
+        }
+        return selectors;
     };
     StyleScope.prototype.ensureSelectors = function () {
         if (!this._cssSelectors && (this._css || application.cssSelectorsCache)) {
             var applicationCssSelectors = application.cssSelectorsCache ? application.cssSelectorsCache : null;
-            var pageCssSyntaxTree = this._css ? cssParser.parse(this._css, undefined) : null;
-            var pageCssSelectors;
-            if (pageCssSyntaxTree) {
-                pageCssSelectors = StyleScope.createSelectorsFromSyntaxTree(pageCssSyntaxTree);
-            }
-            this._cssSelectors = this._joinCssSelectorsArrays([applicationCssSelectors, pageCssSelectors]);
+            var pageCssSelectors = StyleScope.createSelectorsFromCss(this._css, this._cssFileName);
+            this._cssSelectors = StyleScope._joinCssSelectorsArrays([applicationCssSelectors, pageCssSelectors]);
         }
     };
-    StyleScope.prototype._joinCssSelectorsArrays = function (arrays) {
+    StyleScope._joinCssSelectorsArrays = function (arrays) {
         var mergedResult = [];
         var i;
         for (i = 0; i < arrays.length; i++) {
@@ -114,9 +154,7 @@ var StyleScope = (function () {
         for (i = 0; i < rules.length; i++) {
             rule = rules[i];
             if (rule.type === "rule") {
-                filteredDeclarations = rule.declarations.filter(function (val, i, arr) {
-                    return val.type === "declaration";
-                });
+                filteredDeclarations = rule.declarations.filter(function (val, i, arr) { return val.type === "declaration"; });
                 for (j = 0; j < rule.selectors.length; j++) {
                     result.push(cssSelector.createSelector(rule.selectors[j], filteredDeclarations));
                 }
@@ -134,13 +172,11 @@ exports.StyleScope = StyleScope;
 function applyInlineSyle(view, style) {
     try {
         var syntaxTree = cssParser.parse("local { " + style + " }", undefined);
-        var filteredDeclarations = syntaxTree.stylesheet.rules[0].declarations.filter(function (val, i, arr) {
-            return val.type === "declaration";
-        });
+        var filteredDeclarations = syntaxTree.stylesheet.rules[0].declarations.filter(function (val, i, arr) { return val.type === "declaration"; });
         cssSelector.applyInlineSyle(view, filteredDeclarations);
     }
     catch (ex) {
-        trace.write("Applying local style failed: " + ex, trace.categories.Style);
+        trace.write("Applying local style failed: " + ex, trace.categories.Error, trace.messageType.error);
     }
 }
 exports.applyInlineSyle = applyInlineSyle;

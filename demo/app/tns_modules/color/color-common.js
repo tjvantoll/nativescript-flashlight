@@ -124,7 +124,7 @@ var Color = (function () {
         return hex;
     };
     Color.prototype._parseComponents = function () {
-        if (!this._argb) {
+        if (types.isUndefined(this._argb)) {
             throw new Error("Missing the ARGB numeric value");
         }
         this._a = (this._argb >> 24) & 255;
@@ -137,7 +137,10 @@ var Color = (function () {
     };
     Color.prototype._normalizeHex = function (hexStr) {
         if (hexStr.charAt(0) === AMP && hexStr.length === 4) {
-            hexStr = hexStr.charAt(0) + hexStr.charAt(1) + hexStr.charAt(1) + hexStr.charAt(2) + hexStr.charAt(2) + hexStr.charAt(3) + hexStr.charAt(3);
+            hexStr = hexStr.charAt(0)
+                + hexStr.charAt(1) + hexStr.charAt(1)
+                + hexStr.charAt(2) + hexStr.charAt(2)
+                + hexStr.charAt(3) + hexStr.charAt(3);
         }
         return hexStr;
     };

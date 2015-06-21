@@ -22,9 +22,19 @@ function validateRegisterParameters(name, ownerType) {
         throw new Error("OwnerType should not be null or empty string.");
     }
 }
-function getPropertyByNameAndType(name, ownerType) {
-    var key = generatePropertyKey(name, ownerType);
-    return propertyFromKey[key];
+function getPropertyByNameAndType(name, owner) {
+    var result;
+    var key;
+    var classInfo = types.getClassInfo(owner);
+    while (classInfo) {
+        key = generatePropertyKey(name, classInfo.name);
+        result = propertyFromKey[key];
+        if (result) {
+            break;
+        }
+        classInfo = classInfo.baseClassInfo;
+    }
+    return result;
 }
 var PropertyMetadataSettings;
 (function (PropertyMetadataSettings) {
@@ -115,7 +125,7 @@ var PropertyMetadata = (function () {
 })();
 exports.PropertyMetadata = PropertyMetadata;
 var Property = (function () {
-    function Property(name, ownerType, metadata) {
+    function Property(name, ownerType, metadata, valueConverter) {
         this._key = generatePropertyKey(name, ownerType, true);
         if (propertyFromKey[this._key]) {
             throw new Error("Property " + name + " already registered for type " + ownerType + ".");
@@ -131,6 +141,7 @@ var Property = (function () {
             metadata.options = PropertyMetadataSettings.None;
         }
         this._id = propertyIdCounter++;
+        this._valueConverter = valueConverter;
     }
     Object.defineProperty(Property.prototype, "name", {
         get: function () {
@@ -159,6 +170,13 @@ var Property = (function () {
         }
         return true;
     };
+    Object.defineProperty(Property.prototype, "valueConverter", {
+        get: function () {
+            return this._valueConverter;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Property.prototype._getEffectiveValue = function (entry) {
         if (types.isDefined(entry.localValue)) {
             entry.valueSource = ValueSource.Local;
@@ -267,7 +285,7 @@ var DependencyObservable = (function (_super) {
         this._propertyEntries = {};
     }
     DependencyObservable.prototype.set = function (name, value) {
-        var property = getPropertyByNameAndType(name, this.typeName);
+        var property = getPropertyByNameAndType(name, this);
         if (property) {
             this._setValue(property, value, ValueSource.Local);
         }
@@ -276,7 +294,7 @@ var DependencyObservable = (function (_super) {
         }
     };
     DependencyObservable.prototype.get = function (name) {
-        var property = getPropertyByNameAndType(name, this.typeName);
+        var property = getPropertyByNameAndType(name, this);
         if (property) {
             return this._getValue(property);
         }
@@ -329,12 +347,12 @@ var DependencyObservable = (function (_super) {
             property.metadata.onValueChanged({
                 object: this,
                 property: property,
-                eventName: observable.knownEvents.propertyChange,
+                eventName: observable.Observable.propertyChangeEvent,
                 newValue: newValue,
                 oldValue: oldValue
             });
         }
-        if (this.hasListeners(observable.knownEvents.propertyChange)) {
+        if (this.hasListeners(observable.Observable.propertyChangeEvent)) {
             var changeData = _super.prototype._createPropertyChangeData.call(this, property.name, newValue);
             this.notify(changeData);
         }
@@ -358,6 +376,9 @@ var DependencyObservable = (function (_super) {
         return this.typeName;
     };
     DependencyObservable.prototype._setValueInternal = function (property, value, source) {
+        if (types.isString(value) && property.valueConverter) {
+            value = property.valueConverter(value);
+        }
         var entry = this._propertyEntries[property.id];
         if (!entry) {
             entry = new PropertyEntry(property);

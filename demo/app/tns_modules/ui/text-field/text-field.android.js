@@ -5,14 +5,6 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var common = require("ui/text-field/text-field-common");
-function onHintPropertyChanged(data) {
-    var textField = data.object;
-    if (!textField.android) {
-        return;
-    }
-    textField.android.setHint(data.newValue);
-}
-common.hintProperty.metadata.onSetNativeValue = onHintPropertyChanged;
 function onSecurePropertyChanged(data) {
     var textField = data.object;
     if (!textField.android) {
@@ -29,6 +21,7 @@ function onSecurePropertyChanged(data) {
         else if (currentClass === android.text.InputType.TYPE_CLASS_NUMBER) {
             newInputType = currentClass | currentFlags | android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD;
         }
+        newInputType = newInputType & ~28762;
     }
     else {
         if (currentClass === android.text.InputType.TYPE_CLASS_TEXT) {
@@ -47,12 +40,11 @@ var TextField = (function (_super) {
     function TextField() {
         _super.apply(this, arguments);
     }
-    TextField.prototype._createUI = function () {
-        _super.prototype._createUI.call(this);
+    TextField.prototype._configureEditText = function () {
+        this.android.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_NORMAL | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         this.android.setLines(1);
         this.android.setMaxLines(1);
         this.android.setHorizontallyScrolling(true);
-        this.android.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_NORMAL);
     };
     return TextField;
 })(common.TextField);

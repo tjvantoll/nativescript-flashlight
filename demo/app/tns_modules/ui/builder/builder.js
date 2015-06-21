@@ -8,6 +8,9 @@ var templateBuilderDef = require("ui/builder/template-builder");
 var KNOWNCOLLECTIONS = "knownCollections";
 function parse(value, exports) {
     var viewToReturn;
+    if (exports instanceof view.View) {
+        exports = getExports(exports);
+    }
     var componentModule = parseInternal(value, exports);
     if (componentModule) {
         viewToReturn = componentModule.component;
@@ -23,11 +26,11 @@ function parseInternal(value, exports) {
     var xmlParser = new xml.XmlParser(function (args) {
         if (templateBuilder) {
             if (args.eventType === xml.ParserEventType.StartElement) {
-                templateBuilder.addStartElement(args.elementName, args.attributes);
+                templateBuilder.addStartElement(args.prefix, args.namespace, args.elementName, args.attributes);
             }
             else if (args.eventType === xml.ParserEventType.EndElement) {
                 if (templateBuilder.elementName !== args.elementName) {
-                    templateBuilder.addEndElement(args.elementName);
+                    templateBuilder.addEndElement(args.prefix, args.elementName);
                 }
                 else {
                     templateBuilder.build();
@@ -56,22 +59,31 @@ function parseInternal(value, exports) {
             }
             else {
                 var componentModule;
-                if (args.namespace) {
-                    var xmlPath = fs.path.join(fs.knownFolders.currentApp().path, args.namespace, args.elementName) + ".xml";
-                    if (fs.File.exists(xmlPath)) {
-                        var jsPath = xmlPath.replace(".xml", ".js");
-                        var subExports;
-                        if (fs.File.exists(jsPath)) {
-                            subExports = require(jsPath.replace(".js", ""));
+                if (args.prefix) {
+                    var ns = args.namespace;
+                    if (ns) {
+                        var xmlPath = fs.path.join(fs.knownFolders.currentApp().path, ns, args.elementName) + ".xml";
+                        if (fs.File.exists(xmlPath)) {
+                            var jsPath = xmlPath.replace(".xml", ".js");
+                            var subExports;
+                            if (fs.File.exists(jsPath)) {
+                                subExports = require(jsPath.replace(".js", ""));
+                            }
+                            componentModule = loadInternal(xmlPath, subExports);
+                            if (types.isDefined(componentModule) && types.isDefined(componentModule.component)) {
+                                var attr;
+                                for (attr in args.attributes) {
+                                    componentBuilder.setPropertyValue(componentModule.component, subExports, exports, attr, args.attributes[attr]);
+                                }
+                            }
                         }
-                        componentModule = loadInternal(xmlPath, subExports);
-                    }
-                    else {
-                        componentModule = componentBuilder.getComponentModule(args.elementName, args.namespace, args.attributes, exports);
+                        else {
+                            componentModule = componentBuilder.getComponentModule(args.elementName, ns, args.attributes, exports);
+                        }
                     }
                 }
                 else {
-                    componentModule = componentBuilder.getComponentModule(args.elementName, args.namespace, args.attributes, exports);
+                    componentModule = componentBuilder.getComponentModule(args.elementName, ns, args.attributes, exports);
                 }
                 if (componentModule) {
                     if (parent) {
@@ -111,7 +123,10 @@ function parseInternal(value, exports) {
     }, function (e) {
         throw new Error("XML parse error: " + e.message);
     }, true);
-    xmlParser.parse(value.replace('xmlns="http://www.nativescript.org/tns.xsd"', "").replace("xmlns='http://www.nativescript.org/tns.xsd'", ""));
+    if (types.isString(value)) {
+        value = value.replace(/xmlns=("|')http:\/\/www.nativescript.org\/tns.xsd\1/, "");
+        xmlParser.parse(value);
+    }
     return rootComponentModule;
 }
 function load(fileName, exports) {
@@ -163,4 +178,11 @@ function addToComplexProperty(parent, complexProperty, elementModule) {
     else {
         parentComponent[complexProperty.name] = elementModule.component;
     }
+}
+function getExports(instance) {
+    var parent = instance.parent;
+    while (parent && parent.exports === undefined) {
+        parent = parent.parent;
+    }
+    return parent ? parent.exports : undefined;
 }

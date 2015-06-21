@@ -22,6 +22,7 @@ var EditableTextBase = (function (_super) {
     EditableTextBase.prototype._createUI = function () {
         this._imm = this._context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
         this._android = new android.widget.EditText(this._context);
+        this._configureEditText();
         this.android.setTag(this.android.getKeyListener());
         var that = new WeakRef(this);
         var textWatcher = new android.text.TextWatcher({
@@ -39,7 +40,7 @@ var EditableTextBase = (function (_super) {
                         owner._dirtyTextAccumulator = editable.toString();
                         break;
                     case enums.UpdateTextTrigger.textChanged:
-                        owner._onPropertyChangedFromNative(textBase.textProperty, editable.toString());
+                        owner._onPropertyChangedFromNative(textBase.TextBase.textProperty, editable.toString());
                         break;
                     default:
                         throw new Error("Invalid updateTextTrigger: " + owner.updateTextTrigger);
@@ -56,7 +57,7 @@ var EditableTextBase = (function (_super) {
                 }
                 if (!hasFocus) {
                     if (owner._dirtyTextAccumulator) {
-                        owner._onPropertyChangedFromNative(textBase.textProperty, owner._dirtyTextAccumulator);
+                        owner._onPropertyChangedFromNative(textBase.TextBase.textProperty, owner._dirtyTextAccumulator);
                         owner._dirtyTextAccumulator = undefined;
                     }
                     owner.dismissSoftInput();
@@ -68,7 +69,10 @@ var EditableTextBase = (function (_super) {
             onEditorAction: function (textView, actionId, event) {
                 var owner = that.get();
                 if (owner) {
-                    if (actionId === android.view.inputmethod.EditorInfo.IME_ACTION_DONE || actionId === android.view.inputmethod.EditorInfo.IME_ACTION_GO || actionId === android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH || actionId === android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                    if (actionId === android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
+                        actionId === android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
+                        actionId === android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
+                        actionId === android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
                         owner.dismissSoftInput();
                     }
                 }
@@ -76,6 +80,8 @@ var EditableTextBase = (function (_super) {
             }
         });
         this._android.setOnEditorActionListener(editorActionListener);
+    };
+    EditableTextBase.prototype._configureEditText = function () {
     };
     EditableTextBase.prototype._onDetached = function (force) {
         this._imm = undefined;
@@ -86,6 +92,13 @@ var EditableTextBase = (function (_super) {
         if (this._imm) {
             this._imm.hideSoftInputFromWindow(this._android.getWindowToken(), 0);
         }
+    };
+    EditableTextBase.prototype.focus = function () {
+        var result = _super.prototype.focus.call(this);
+        if (result && this._nativeView) {
+            this._imm.showSoftInput(this._nativeView, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        }
+        return result;
     };
     EditableTextBase.prototype._onTextPropertyChanged = function (data) {
         if (this._android) {
@@ -156,6 +169,60 @@ var EditableTextBase = (function (_super) {
         else {
             this.android.setKeyListener(null);
         }
+    };
+    EditableTextBase.prototype._onAutocapitalizationTypePropertyChanged = function (data) {
+        var editableTextBase = data.object;
+        if (!editableTextBase.android) {
+            return;
+        }
+        var inputType = editableTextBase.android.getInputType();
+        inputType = inputType & ~28762;
+        switch (data.newValue) {
+            case enums.AutocapitalizationType.none:
+                break;
+            case enums.AutocapitalizationType.words:
+                inputType = inputType | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS;
+                break;
+            case enums.AutocapitalizationType.sentences:
+                inputType = inputType | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+                break;
+            case enums.AutocapitalizationType.allCharacters:
+                inputType = inputType | android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
+                break;
+            default:
+                inputType = inputType | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+                break;
+        }
+        editableTextBase.android.setInputType(inputType);
+    };
+    EditableTextBase.prototype._onAutocorrectPropertyChanged = function (data) {
+        var editableTextBase = data.object;
+        if (!editableTextBase.android) {
+            return;
+        }
+        var inputType = editableTextBase.android.getInputType();
+        switch (data.newValue) {
+            case true:
+                inputType = inputType | android.text.InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE;
+                inputType = inputType | android.text.InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+                inputType = inputType & ~android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+                break;
+            case false:
+                inputType = inputType & ~android.text.InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE;
+                inputType = inputType & ~android.text.InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+                inputType = inputType | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+                break;
+            default:
+                break;
+        }
+        editableTextBase.android.setInputType(inputType);
+    };
+    EditableTextBase.prototype._onHintPropertyChanged = function (data) {
+        var editableTextBase = data.object;
+        if (!editableTextBase.android) {
+            return;
+        }
+        editableTextBase.android.setHint(data.newValue);
     };
     return EditableTextBase;
 })(common.EditableTextBase);

@@ -29,6 +29,11 @@ function clearWriters() {
 }
 exports.clearWriters = clearWriters;
 function setCategories(categories) {
+    _categories = {};
+    addCategories(categories);
+}
+exports.setCategories = setCategories;
+function addCategories(categories) {
     var split = categories.split(",");
     _categories = {};
     var i;
@@ -36,7 +41,7 @@ function setCategories(categories) {
         _categories[split[i].trim()] = true;
     }
 }
-exports.setCategories = setCategories;
+exports.addCategories = addCategories;
 function write(message, category, type) {
     if (!_enabled) {
         return;
@@ -100,7 +105,8 @@ var categories;
     categories.Navigation = "Navigation";
     categories.Test = "Test";
     categories.Binding = "Binding";
-    categories.All = categories.VisualTreeEvents + "," + categories.Layout + "," + categories.Style + "," + categories.ViewHierarchy + "," + categories.NativeLifecycle + "," + categories.Debug + "," + categories.Navigation + "," + categories.Test + "," + categories.Binding;
+    categories.Error = "Error";
+    categories.All = categories.VisualTreeEvents + "," + categories.Layout + "," + categories.Style + "," + categories.ViewHierarchy + "," + categories.NativeLifecycle + "," + categories.Debug + "," + categories.Navigation + "," + categories.Test + "," + categories.Binding + "," + categories.Error;
     categories.separator = ",";
     function concat() {
         var i;

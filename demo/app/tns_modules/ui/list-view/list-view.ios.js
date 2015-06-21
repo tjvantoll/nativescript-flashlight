@@ -7,10 +7,11 @@ var __extends = this.__extends || function (d, b) {
 var common = require("ui/list-view/list-view-common");
 var utils = require("utils/utils");
 var view = require("ui/core/view");
+var color = require("color");
 var CELLIDENTIFIER = "cell";
-var ITEMLOADING = common.knownEvents.itemLoading;
-var LOADMOREITEMS = common.knownEvents.loadMoreItems;
-var ITEMTAP = common.knownEvents.itemTap;
+var ITEMLOADING = common.ListView.itemLoadingEvent;
+var LOADMOREITEMS = common.ListView.loadMoreItemsEvent;
+var ITEMTAP = common.ListView.itemTapEvent;
 var DEFAULT_HEIGHT = 80;
 require("utils/module-merge").merge(common, exports);
 var infinity = utils.layout.makeMeasureSpec(0, utils.layout.UNSPECIFIED);
@@ -28,7 +29,7 @@ var ListViewCell = (function (_super) {
     return ListViewCell;
 })(UITableViewCell);
 function notifyForItemAtIndex(listView, cell, eventName, indexPath) {
-    var args = { eventName: eventName, object: listView, index: indexPath.row, view: cell.view };
+    var args = { eventName: eventName, object: listView, index: indexPath.row, view: cell.view, ios: cell, android: undefined };
     listView.notify(args);
     return args;
 }
@@ -86,38 +87,61 @@ var UITableViewDelegateImpl = (function (_super) {
         return indexPath;
     };
     UITableViewDelegateImpl.prototype.tableViewHeightForRowAtIndexPath = function (tableView, indexPath) {
-        if (utils.ios.MajorVersion < 8) {
+        var height = undefined;
+        if (utils.ios.MajorVersion >= 8) {
+            height = this._owner.getHeight(indexPath.row);
+        }
+        if (utils.ios.MajorVersion < 8 || height === undefined) {
             var cell = this._measureCell;
             if (!cell) {
                 this._measureCell = tableView.dequeueReusableCellWithIdentifier(CELLIDENTIFIER) || ListViewCell.new();
                 cell = this._measureCell;
             }
-            return this._owner._prepareCell(cell, indexPath);
+            height = this._owner._prepareCell(cell, indexPath);
         }
-        return this._owner.getHeight(indexPath.row);
-    };
-    UITableViewDelegateImpl.prototype.tableViewEstimatedHeightForRowAtIndexPath = function (tableView, indexPath) {
-        return DEFAULT_HEIGHT;
+        return height;
     };
     UITableViewDelegateImpl.ObjCProtocols = [UITableViewDelegate];
     return UITableViewDelegateImpl;
 })(NSObject);
+function onSeparatorColorPropertyChanged(data) {
+    var bar = data.object;
+    if (!bar.ios) {
+        return;
+    }
+    if (data.newValue instanceof color.Color) {
+        bar.ios.separatorColor = data.newValue.ios;
+    }
+}
+common.ListView.separatorColorProperty.metadata.onSetNativeValue = onSeparatorColorPropertyChanged;
 var ListView = (function (_super) {
     __extends(ListView, _super);
     function ListView() {
         _super.call(this);
         this._preparingCell = false;
+        this._isDataDirty = false;
         this._ios = new UITableView();
         this._ios.registerClassForCellReuseIdentifier(ListViewCell.class(), CELLIDENTIFIER);
         this._ios.autoresizesSubviews = false;
         this._ios.autoresizingMask = UIViewAutoresizing.UIViewAutoresizingNone;
+        this._ios.estimatedRowHeight = DEFAULT_HEIGHT;
         var dataSource = DataSource.new().initWithOwner(this);
         this._dataSource = dataSource;
         this._ios.dataSource = this._dataSource;
-        this._uiTableViewDelegate = UITableViewDelegateImpl.new().initWithOwner(this);
-        this._ios.delegate = this._uiTableViewDelegate;
+        this._delegate = UITableViewDelegateImpl.new().initWithOwner(this);
         this._heights = new Array();
     }
+    ListView.prototype.onLoaded = function () {
+        _super.prototype.onLoaded.call(this);
+        if (this._isDataDirty) {
+            this.refresh();
+        }
+        this._ios.delegate = this._delegate;
+    };
+    ListView.prototype.onUnloaded = function () {
+        this._ios.delegate = null;
+        _super.prototype.onUnloaded.call(this);
+    };
     Object.defineProperty(ListView.prototype, "ios", {
         get: function () {
             return this._ios;
@@ -126,7 +150,14 @@ var ListView = (function (_super) {
         configurable: true
     });
     ListView.prototype.refresh = function () {
-        this._ios.reloadData();
+        if (this.isLoaded) {
+            this._ios.reloadData();
+            this.requestLayout();
+            this._isDataDirty = false;
+        }
+        else {
+            this._isDataDirty = true;
+        }
     };
     ListView.prototype.getHeight = function (index) {
         return this._heights[index];
@@ -158,18 +189,18 @@ var ListView = (function (_super) {
     };
     ListView.prototype._prepareCell = function (tableCell, indexPath) {
         var cell = tableCell;
-        if (!cell.view) {
-            cell.view = this._getItemTemplateContent(indexPath.row);
-        }
-        var args = notifyForItemAtIndex(this, cell, ITEMLOADING, indexPath);
-        var view = cell.view = args.view || this._getDefaultItemContent(indexPath.row);
-        if (view && !view.parent && view.ios) {
-            cell.contentView.addSubview(view.ios);
-            this._addView(view);
-        }
         var cellHeight;
         try {
             this._preparingCell = true;
+            if (!cell.view) {
+                cell.view = this._getItemTemplateContent(indexPath.row);
+            }
+            var args = notifyForItemAtIndex(this, cell, ITEMLOADING, indexPath);
+            var view = cell.view = args.view || this._getDefaultItemContent(indexPath.row);
+            if (view && !view.parent && view.ios) {
+                cell.contentView.addSubview(view.ios);
+                this._addView(view);
+            }
             this._prepareItem(view, indexPath.row);
             cellHeight = this._layoutCell(view, indexPath);
         }

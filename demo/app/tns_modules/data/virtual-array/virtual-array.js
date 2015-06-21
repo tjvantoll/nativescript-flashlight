@@ -7,11 +7,6 @@ var __extends = this.__extends || function (d, b) {
 var observable = require("data/observable");
 var types = require("utils/types");
 var CHANGE = "change", UPDATE = "update", DELETE = "delete", ADD = "add";
-var knownEvents;
-(function (knownEvents) {
-    knownEvents.itemsLoading = "itemsLoading";
-    knownEvents.change = "change";
-})(knownEvents = exports.knownEvents || (exports.knownEvents = {}));
 var ChangeType = (function () {
     function ChangeType() {
     }
@@ -42,8 +37,7 @@ var VirtualArray = (function (_super) {
                 var count = value - this._length;
                 this._length = value;
                 this.notify({
-                    eventName: CHANGE,
-                    object: this,
+                    eventName: CHANGE, object: this,
                     action: count > 0 ? ADD : DELETE,
                     index: index,
                     removed: new Array(count < 0 ? Math.abs(count) : 0),
@@ -94,8 +88,7 @@ var VirtualArray = (function (_super) {
             }
         }
         this.notify({
-            eventName: CHANGE,
-            object: this,
+            eventName: CHANGE, object: this,
             action: UPDATE,
             index: index,
             removed: new Array(items.length),
@@ -125,8 +118,7 @@ var VirtualArray = (function (_super) {
             else {
                 if (count > 0) {
                     this.notify({
-                        eventName: knownEvents.itemsLoading,
-                        object: this,
+                        eventName: VirtualArray.itemsLoadingEvent, object: this,
                         index: start,
                         count: count
                     });
@@ -137,13 +129,14 @@ var VirtualArray = (function (_super) {
         }
         if (start >= 0 && count > 0) {
             this.notify({
-                eventName: knownEvents.itemsLoading,
-                object: this,
+                eventName: VirtualArray.itemsLoadingEvent, object: this,
                 index: start,
                 count: count
             });
         }
     };
+    VirtualArray.changeEvent = CHANGE;
+    VirtualArray.itemsLoadingEvent = "itemsLoading";
     return VirtualArray;
 })(observable.Observable);
 exports.VirtualArray = VirtualArray;
