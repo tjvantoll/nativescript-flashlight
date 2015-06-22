@@ -45,15 +45,27 @@ To use the camera on Android your app must request permission to use the camera.
 To use the flashlight module you must first `require()` it from your project's `node_modules` directory:
 
 ```js
-var flashlight = require( "./node_modules/nativescript-flashlight/flashlight" );
+var flashlight = require("./node_modules/nativescript-flashlight/flashlight");
 ```
 
 After you have a reference to the module you can then call its `on()`, `off()`, and `toggle()` methods. For example, the code below turns your device's flashlight on:
 
 ```js
 // my-page.js
-var flashlight = require( "/path/to/node_modules/nativescript-flashlight" );
+var flashlight = require("/path/to/node_modules/nativescript-flashlight");
 flashlight.on();
+```
+
+In most cases you'll want to wrap your `on()` call with a check of `isAvailable()`, to handle devices where a flashlight is not available:
+
+```js
+// my-page.js
+var flashlight = require("/path/to/node_modules/nativescript-flashlight");
+if (flashlight.isAvailable()) {
+	flashlight.on();
+} else {
+	alert("A flashlight is not available on your device.");
+}
 ```
 
 ## Examples
@@ -71,21 +83,21 @@ The code below creates a button that toggles the device's flashlight:
 
 ```js
 // my-page.js
-var flashlight = require( "./flashlight" );
-var observable = require( "data/observable" );
+var flashlight = require("./flashlight");
+var observable = require("data/observable");
 var viewModel = new observable.Observable();
 
 // Set the initial text of the button
-viewModel.set( "flashlightState", "Turn on" );
+viewModel.set("flashlightState", "Turn on");
 
 // A tap handle for the page's button. Toggle the state of the flashlight
 // and the button's text
 viewModel.toggleFlashlight = function() {
     flashlight.toggle();
-    viewModel.set( "flashlightState", ( flashlight.isOn() ? "Turn off" : "Turn on" ) );
+    viewModel.set("flashlightState", (flashlight.isOn() ? "Turn off" : "Turn on"));
 };
 
-function pageLoaded( args ) {
+function pageLoaded(args) {
     var page = args.object;
     page.bindingContext = viewModel;
 }

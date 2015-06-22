@@ -1,15 +1,25 @@
-var flashlight = require( "./flashlight-common" );
-var camera = android.hardware.Camera.open();
-var p = camera.getParameters();
+var application = require("application");
+var flashlight = require("./flashlight-common");
+var camera;
+var parameters;
 
+flashlight.isAvailable = function() {
+	var packageManager = application.android.currentContext.getPackageManager();
+	return packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_FLASH);
+}
 flashlight.on = function() {
-	p.setFlashMode( android.hardware.Camera.Parameters.FLASH_MODE_TORCH );
-	camera.setParameters( p );
+	this._checkAvailability();
+	if (!camera) {
+		camera = android.hardware.Camera.open(0);
+		parameters = camera.getParameters();
+	}
+	parameters.setFlashMode(camera.Parameters.FLASH_MODE_TORCH);
+	camera.setParameters(parameters);
 	camera.startPreview();
 };
 flashlight.off = function() {
-	p.setFlashMode( android.hardware.Camera.Parameters.FLASH_MODE_OFF );
-	camera.setParameters( p );
+	parameters.setFlashMode(camera.Parameters.FLASH_MODE_OFF);
+	camera.setParameters(parameters);
 	camera.stopPreview();
 };
 

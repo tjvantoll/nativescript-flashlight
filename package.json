@@ -1,6 +1,6 @@
 {
   "name": "nativescript-flashlight",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A flashlight NativeScript module for Android and iOS",
   "main": "flashlight.js",
   "repository": {
