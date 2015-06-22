@@ -93,8 +93,12 @@ viewModel.set("flashlightState", "Turn on");
 // A tap handle for the page's button. Toggle the state of the flashlight
 // and the button's text
 viewModel.toggleFlashlight = function() {
-    flashlight.toggle();
-    viewModel.set("flashlightState", (flashlight.isOn() ? "Turn off" : "Turn on"));
+    if (flashlight.isAvailable()) {
+        flashlight.toggle();
+        viewModel.set("flashlightState", (flashlight.isOn() ? "Turn off" : "Turn on"));
+    } else {
+        alert("A flashlight is not available on your device.");
+    }
 };
 
 function pageLoaded(args) {
