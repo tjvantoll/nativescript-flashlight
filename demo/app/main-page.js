@@ -8,7 +8,7 @@ viewModel.toggleFlashlight = function() {
 		flashlight.toggle();
 		viewModel.set("flashlightState", (flashlight.isOn() ? "Turn off" : "Turn on"));
 	} else {
-		alert("A flashlight is not available on this device.");
+		alert("A flashlight is not available on your device.");
 	}
 };
 

@@ -2,6 +2,6 @@
   "name": "nativescript-flashlight-sample",
   "main": "app.js",
   "dependencies": {
-    "nativescript-flashlight": "^0.1.0"
+    "nativescript-flashlight": "^0.2.0"
   }
 }
