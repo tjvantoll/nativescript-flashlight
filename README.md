@@ -7,7 +7,7 @@ A plugin for using your device's flashlight in NativeScript Android and iOS apps
 Run the following command from the root of your project:
 
 ```
-$ tns plugin add nativescript-flaslight
+$ tns plugin add nativescript-flashlight
 ```
 
 This command automatically installs the necessary files, as well as stores nativescript-flashlight as a dependency in your project's `package.json` file.
