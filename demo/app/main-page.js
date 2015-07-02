@@ -1,4 +1,4 @@
-var flashlight = require("./node_modules/nativescript-flashlight/flashlight");
+var flashlight = require("nativescript-flashlight");
 var observable = require("data/observable");
 var viewModel = new observable.Observable();
 
