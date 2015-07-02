@@ -1,58 +1,30 @@
-# NativeScript Flashlight
+# NativeScript Flashlight Plugin
 
-A flashlight NativeScript module for Android and iOS.
+A plugin for using your device's flashlight in NativeScript Android and iOS apps.
 
 ## Installation
 
-Run `npm install nativescript-flashlight --save` from your project's inner `app` directory:
+Run the following command from the root of your project:
 
 ```
-.
-├── app  <----------------run npm install from here
-│   ├── App_Resources
-│   │   ├── android
-│   │   └── ios
-│   ├── app.css
-│   ├── app.js
-│   ├── main-page.js
-│   ├── main-page.xml
-│   ├── node_modules
-│   │   └── nativescript-flashlight <-- The install will place the module's code here
-│   │       └── ...
-│   ├── package.json <-- The install will register “nativescript-flashlight” as a dependency here
-│   └── tns_modules
-│       └── ...
-└── platforms
-    ├── android
-    └── ios
+$ tns plugin add nativescript-flaslight
 ```
 
-As is, using npm within NativeScript is still experimental, so it's possible that you'll run into some issues. A more complete solution is in the works, and you can check out [this issue](https://github.com/NativeScript/nativescript-cli/issues/362) for an update on its progress and to offer feedback.
-
-If npm doesn't end up working for you, you can just copy and paste this repo's flashlight-common.js, flashlight.android.js, and flashlight.ios.js files into your app and reference them directly.
-
-### Android
-
-To use the camera on Android your app must request permission to use the camera. To do so, add the following two lines to your project's AndroidManifest.xml:
-
-```xml
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-feature android:name="android.hardware.camera" />
-```
+This command automatically installs the necessary files, as well as stores nativescript-flashlight as a dependency in your project's `package.json` file.
 
 ## Usage
 
-To use the flashlight module you must first `require()` it from your project's `node_modules` directory:
+To use the flashlight module you must first `require()` it:
 
 ```js
-var flashlight = require("./node_modules/nativescript-flashlight/flashlight");
+var flashlight = require("nativescript-flashlight");
 ```
 
 After you have a reference to the module you can then call its `on()`, `off()`, and `toggle()` methods. For example, the code below turns your device's flashlight on:
 
 ```js
 // my-page.js
-var flashlight = require("/path/to/node_modules/nativescript-flashlight");
+var flashlight = require("nativescript-flashlight");
 flashlight.on();
 ```
 
@@ -60,7 +32,7 @@ In most cases you'll want to wrap your `on()` call with a check of `isAvailable(
 
 ```js
 // my-page.js
-var flashlight = require("/path/to/node_modules/nativescript-flashlight");
+var flashlight = require("nativescript-flashlight");
 if (flashlight.isAvailable()) {
 	flashlight.on();
 } else {
@@ -83,7 +55,7 @@ The code below creates a button that toggles the device's flashlight:
 
 ```js
 // my-page.js
-var flashlight = require("./flashlight");
+var flashlight = require("nativescript-flashlight");
 var observable = require("data/observable");
 var viewModel = new observable.Observable();
 
