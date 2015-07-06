@@ -21,6 +21,7 @@ flashlight.off = function() {
 	parameters.setFlashMode(camera.Parameters.FLASH_MODE_OFF);
 	camera.setParameters(parameters);
 	camera.stopPreview();
+	camera.release();
 };
 
 module.exports = flashlight;
