@@ -9,6 +9,6 @@
 		}
 	},
 	"dependencies": {
-		"nativescript-flashlight": "^0.2.1"
+		"nativescript-flashlight": "^1.0.0"
 	}
 }
