@@ -1,4 +1,4 @@
-# NativeScript Flashlight Plugin
+g# NativeScript Flashlight Plugin
 
 A plugin for using your device's flashlight in NativeScript Android and iOS apps.
 
@@ -17,7 +17,15 @@ This command automatically installs the necessary files, as well as stores nativ
 To use the flashlight module you must first `require()` it:
 
 ```js
+// JavaScript
 var flashlight = require("nativescript-flashlight");
+```
+
+Or if you’re using TypeScript, `import` the module:
+
+```js
+// TypeScript
+import * as flashlight from "nativescript-flashlight";
 ```
 
 After you have a reference to the module you can then call its `on()`, `off()`, and `toggle()` methods. For example, the code below turns your device's flashlight on:
