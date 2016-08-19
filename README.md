@@ -1,4 +1,4 @@
-g# NativeScript Flashlight Plugin
+# NativeScript Flashlight Plugin
 
 A plugin for using your device's flashlight in NativeScript Android and iOS apps.
 
