@@ -1,10 +1,10 @@
 var flashlight = {
 	_on: false,
-	toggle: function() {
+	toggle: function(arg) {
 		if (flashlight._on) {
 			flashlight.off();
 		} else {
-			flashlight.on();
+			flashlight.on(arg);
 		}
 		flashlight._on = !flashlight._on;
 	},

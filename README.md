@@ -28,12 +28,16 @@ Or if you’re using TypeScript, `import` the module:
 import * as flashlight from "nativescript-flashlight";
 ```
 
-After you have a reference to the module you can then call its `on()`, `off()`, and `toggle()` methods. For example, the code below turns your device's flashlight on:
+After you have a reference to the module you can then call its `on()`, `off()`, and `toggle()` methods. For example, the code below turns your device's flashlight on with an `intensity` setting of 25%.
+
+The optional `intensity` is supported __only on iOS__ and is by default `1.0`, which is 100% brightness.
 
 ```js
 // my-page.js
 var flashlight = require("nativescript-flashlight");
-flashlight.on();
+flashlight.on({
+    intensity: 0.25
+});
 ```
 
 In most cases you'll want to wrap your `on()` call with a check of `isAvailable()`, to handle devices where a flashlight is not available:
@@ -74,7 +78,9 @@ viewModel.set("flashlightState", "Turn on");
 // and the button's text
 viewModel.toggleFlashlight = function() {
     if (flashlight.isAvailable()) {
-        flashlight.toggle();
+        flashlight.toggle({
+            intensity: 0.6 // optional, supported on iOS only (default: 1.0 which is 100% brightness)
+        });
         viewModel.set("flashlightState", (flashlight.isOn() ? "Turn off" : "Turn on"));
     } else {
         alert("A flashlight is not available on your device.");
