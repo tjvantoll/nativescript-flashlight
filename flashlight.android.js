@@ -2,7 +2,7 @@ var platformModule = require("platform");
 var application = require("application");
 var flashlight = require("./flashlight-common");
 var camera;
- // Used when device has camera2 API
+// Used when device has camera2 API
 var appContext;
 var cameraManager;
 // Used when device lacks camera2 API
