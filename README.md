@@ -23,7 +23,7 @@ var flashlight = require("nativescript-flashlight");
 
 Or if you’re using TypeScript, `import` the module:
 
-```js
+```typescript
 // TypeScript
 import * as flashlight from "nativescript-flashlight";
 ```
