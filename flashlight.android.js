@@ -10,7 +10,7 @@ flashlight.isAvailable = function() {
 
 flashlight.on = function() {
 	this._checkAvailability();
-	if (!camera) {
+	if (camera === undefined) {
 		camera = android.hardware.Camera.open(0);
 		parameters = camera.getParameters();
 	}
@@ -24,6 +24,7 @@ flashlight.off = function() {
 	camera.setParameters(parameters);
 	camera.stopPreview();
 	camera.release();
+	camera = undefined;
 };
 
 module.exports = flashlight;
