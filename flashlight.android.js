@@ -14,7 +14,8 @@ flashlight.isAvailable = function() {
 }
 flashlight.hasCamera2API = function() {
 	return platformModule.device.sdkVersion > 20;
-}
+};
+
 flashlight.on = function() {
 	this._checkAvailability();
 	if (flashlight.hasCamera2API()) {
@@ -34,6 +35,7 @@ flashlight.on = function() {
 		camera.startPreview();
 	}
 };
+
 flashlight.off = function() {
 	if (flashlight.hasCamera2API()) {
 		cameraManager.setTorchMode(camera, false);
