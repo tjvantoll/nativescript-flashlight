@@ -4,22 +4,22 @@
   "nativescript": {
     "id": "org.nativescript.flashlightdemo",
     "tns-ios": {
-      "version": "2.3.0"
+      "version": "5.0.0"
     },
     "tns-android": {
-      "version": "2.3.0"
+      "version": "5.0.0"
     }
   },
   "dependencies": {
-    "tns-core-modules": "2.3.0",
-    "nativescript-flashlight": "file:../../nativescript-flashlight"
+    "tns-core-modules": "~5.0.5",
+    "nativescript-flashlight": "file:../src"
   },
   "devDependencies": {
     "babel-traverse": "6.16.0",
     "babel-types": "6.16.0",
     "babylon": "6.11.4",
     "lazy": "1.0.11",
-    "nativescript-dev-typescript": "^0.3.2",
-    "typescript": "^1.8.10"
+    "nativescript-dev-typescript": "~0.7.8",
+    "typescript": "~2.8.0"
   }
 }

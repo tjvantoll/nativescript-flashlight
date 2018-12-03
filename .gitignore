@@ -1,7 +1,8 @@
 .idea/
 .vscode/
+node_modules/
 demo/lib/
 demo/platforms/
-demo/node_modules
 demo/app/*.js
-npm-debug.log
+src/platforms/android/*.aar
+*.log

@@ -1,6 +1,6 @@
 {
   "name": "nativescript-flashlight",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "A flashlight NativeScript module for Android and iOS",
   "main": "flashlight",
   "typings": "index.d.ts",
@@ -10,6 +10,10 @@
       "android": "1.1.0"
     }
   },
+  "scripts": {
+    "demo.ios": "cd ../demo && tns run ios --syncAllFiles",
+    "demo.android": "cd ../demo && tns run android --syncAllFiles"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/tjvantoll/nativescript-flashlight.git"
@@ -18,18 +22,18 @@
     "NativeScript"
   ],
   "author": "TJ VanToll <tj.vantoll@gmail.com> (http://tjvantoll.com/)",
-   "contributors": [
+  "contributors": [
     {
       "name": "Brad Martin",
       "email": "bradwaynemartin@gmail.com",
       "url": "https://github.com/bradmartin"
     },
-     {
-       "name": "Eddy Verbruggen",
-       "email": "eddyverbruggen@gmail.com",
-       "url": "https://github.com/eddyverbruggen"
-     }
-   ],
+    {
+      "name": "Eddy Verbruggen",
+      "email": "eddyverbruggen@gmail.com",
+      "url": "https://github.com/eddyverbruggen"
+    }
+  ],
   "license": {
     "type": "MIT",
     "url": "https://github.com/tjvantoll/nativescript-flashlight/blob/master/LICENSE"
@@ -37,5 +41,9 @@
   "bugs": {
     "url": "https://github.com/tjvantoll/nativescript-flashlight/issues"
   },
-  "homepage": "https://github.com/tjvantoll/nativescript-flashlight"
+  "homepage": "https://github.com/tjvantoll/nativescript-flashlight",
+  "devDependencies": {
+    "tns-core-modules": "~5.0.5",
+    "tns-platform-declarations": "~5.0.5"
+  }
 }
