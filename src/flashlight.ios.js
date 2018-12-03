@@ -16,17 +16,19 @@ flashlight.on = function(arg) {
 		}
 	}
 
-	device.lockForConfiguration(null);
-  device.setTorchModeOnWithLevelError(intensity, null);
-	device.flashMode = AVCaptureFlashMode.AVCaptureFlashModeOn;
-	device.unlockForConfiguration();
+	if (device.lockForConfiguration()) {
+    device.setTorchModeOnWithLevelError(intensity);
+    device.flashMode = AVCaptureFlashMode.On;
+    device.unlockForConfiguration();
+	}
 };
 
 flashlight.off = function() {
-	device.lockForConfiguration(null);
-	device.torchMode = AVCaptureTorchMode.AVCaptureTorchModeOff;
-	device.flashMode = AVCaptureFlashMode.AVCaptureFlashModeOff;
-	device.unlockForConfiguration();
+	if (device.lockForConfiguration()) {
+    device.torchMode = AVCaptureTorchMode.Off;
+    device.flashMode = AVCaptureFlashMode.Off;
+    device.unlockForConfiguration();
+	}
 };
 
 module.exports = flashlight;

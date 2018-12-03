@@ -1,6 +1,6 @@
-import { EventData, Observable, PropertyChangeData } from "data/observable";
-import { Page } from "ui/page";
-import { Slider } from "ui/slider";
+import { EventData, Observable, PropertyChangeData } from "tns-core-modules/data/observable";
+import { Page } from "tns-core-modules/ui/page";
+import { Slider } from "tns-core-modules/ui/slider";
 import * as flashlight from "nativescript-flashlight";
 
 let viewModel = new Observable();
@@ -16,14 +16,16 @@ export function toggleFlashlight(arg) {
   } else {
     alert("A flashlight is not available on your device.");
   }
-};
+}
 
 export function pageLoaded(args: EventData) {
-  let page = <Page>args.object;
+  const page = <Page>args.object;
   page.bindingContext = viewModel;
 
-  let slider = <Slider>page.getViewById("intensitySlider");
-  slider.on("propertyChange", (args: PropertyChangeData) => {
-    console.log("Intensity set to: " + args.value);
-  });
+  const slider = <Slider>page.getViewById("intensitySlider");
+  if (slider) {
+    slider.on("propertyChange", (args: PropertyChangeData) => {
+      console.log("Intensity set to: " + args.value);
+    });
+  }
 }
