@@ -9,7 +9,7 @@ var cameraManager;
 var parameters;
 
 flashlight.isAvailable = function () {
-  var packageManager = application.android.currentContext.getPackageManager();
+  var packageManager = com.tns.NativeScriptApplication.getInstance().getPackageManager();
   return packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_FLASH);
 };
 
@@ -21,7 +21,7 @@ flashlight.on = function () {
   this._checkAvailability();
   if (flashlight.hasCamera2API()) {
     if (!camera) {
-      appContext = application.android.context;
+      appContext = application.getNativeApplication().getApplicationContext();
       cameraManager = appContext.getSystemService(android.content.Context.CAMERA_SERVICE);
       camera = cameraManager.getCameraIdList()[0];
     }
