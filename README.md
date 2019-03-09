@@ -1,6 +1,12 @@
 # NativeScript Flashlight Plugin
-
 A plugin for using your device's flashlight in NativeScript Android and iOS apps.
+
+[![NPM version][npm-image]][npm-url]
+[![Downloads][downloads-image]][npm-url]
+
+[npm-image]:http://img.shields.io/npm/v/nativescript-flashlight.svg
+[npm-url]:https://npmjs.org/package/nativescript-flashlight
+[downloads-image]:http://img.shields.io/npm/dm/nativescript-flashlight.svg
 
 ## Installation
 
